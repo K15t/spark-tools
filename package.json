@@ -1,0 +1,34 @@
+{
+  "name": "spark-tools",
+  "version": "0.0.1",
+  "description": "Developer tools for the SPARK framework (more info: https://github.com/K15t/spark).",
+  "preferGlobal": true,
+  "bin": {
+    "spark-create-spa": "index.js"
+  },
+  "dependencies": {
+    "inquirer": "0.8.2",
+    "q": "1.2.0",
+    "xml2js": "0.4.8"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/K15t/spark-tools.git"
+  },
+  "keywords": [
+    "spark",
+    "spa",
+    "atlassian",
+    "angular",
+    "frontent"
+  ],
+  "author": "Stefan Kleineikenscheidt <stefan@k15t.com> (http://www.k15t.com/)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/K15t/spark-tooling/issues"
+  },
+  "homepage": "https://github.com/K15t/spark-tooling"
+}
