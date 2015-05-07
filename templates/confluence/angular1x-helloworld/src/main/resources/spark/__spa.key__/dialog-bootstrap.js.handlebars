@@ -1,0 +1,18 @@
+AJS.toInit(function () {
+
+    'use strict';
+
+    var spark = SPARK.noConflict();
+
+    var dialog1;
+
+    // TODO create web-item in atlassian-plugin.xml and register click handler here.
+    AJS.whenIType('1').execute(function () {
+        if (!dialog1) {
+            dialog1 = spark.createDialogApp('{{spa.key}}', '/plugins/servlet/{{spa.key}}/');
+        } else {
+            dialog1.show();
+        }
+    });
+
+});
