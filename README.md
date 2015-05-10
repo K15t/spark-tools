@@ -1,8 +1,23 @@
 # SPARK Tools
 
-__NOTE: This is still under development.__
+__NOTE: This is alpha.__
 
 SPARK tools provide tools for working with the SPARK framework.
+
+
+# Installing
+
+The SPARK tools should be installed globally.
+
+```
+$ npm install --global spark-tools 
+```
+
+
+# Using
+
+Go to an Atlassian add-on project (Confluence add-ons are currently supported)
+and execute ```spark```
 
 
 # Developing
