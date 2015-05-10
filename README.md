@@ -29,7 +29,7 @@ and execute ```spark```
 
 # TODO
 
-* Make available on npmjs.com
+* Check Atlassian host application, and support for JIRA (currently only Confluence is supported)
 * Add real-life Gulp build
 * Add web-items to navigate to app (instead of whenIType '1', etc.)
 * 'Close' and 'help' buttons should work f  or dialog app

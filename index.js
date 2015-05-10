@@ -70,10 +70,10 @@ var DEBUG = false,
                 {
                     name: 'AngularJS 1.x (Hello World)',
                     value: 'angular1x-helloworld'
-                },
-                {
-                    name: 'AngularJS 1.x (with Gulp)',
-                    value: 'angular1x-gulp'
+                //},
+                //{
+                //    name: 'AngularJS 1.x (with Gulp)',
+                //    value: 'angular1x-gulp'
                 }
             ]
         },
