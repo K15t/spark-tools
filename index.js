@@ -61,6 +61,7 @@ function main(args) {
 
     loadPomXml(project)
         .then(showWelcomeMessage)
+        .then(getHostApp)
         .then(loadAtlassianPluginXml)
         .then(getLatestSparkVersion)
         .then(readSpaParams)
@@ -106,7 +107,7 @@ function loadPomXml(project) {
                 deferred.reject(err);
             }
         } else {
-            project.pom.$ = cheerio(data);
+            project.pom.$ = cheerio.load(data);
 
             if (project.pom.$('project > packaging').text() !== 'atlassian-plugin') {
                 deferred.reject(new Error('Packaging is not \'atlassian plugin\'. Is this an Atlassian SDK project?'));
@@ -116,6 +117,29 @@ function loadPomXml(project) {
         }
     });
 
+    return deferred.promise;
+}
+
+function getHostApp(project) {
+    var deferred = Q.defer();
+    var hostApp = '';
+
+    try {
+        var artifactId = project.pom.$('project > build > plugins > plugin:has(> groupId:contains("com.atlassian.maven.plugins")) > artifactId').text();
+        _debug('AMPS artifact Id: ' + artifactId);
+        hostApp = artifactId.match(/^maven-(confluence|jira|stash)-plugin$/)[1];
+        _debug('hostApp: ' + hostApp);
+    } catch (e) {
+        deferred.reject(e);
+    }
+
+    if (['confluence'].indexOf(hostApp) === -1) { // TODO change when we support JIRA or Stash
+        deferred.reject(new Error('Unsupported host app: \'' + hostApp + '\'. We only support Confluence currently.'));
+    }
+
+    project.hostApp = hostApp;
+
+    deferred.resolve(project);
     return deferred.promise;
 }
 
@@ -136,7 +160,7 @@ function loadAtlassianPluginXml(project) {
         if (err) {
             deferred.reject(err);
         } else {
-            atlassianPlugin.pom.$ = cheerio(data);
+            project.atlassianPlugin.$ = cheerio.load(data);
             deferred.resolve(project);
         }
     });
