@@ -29,13 +29,17 @@ var DEBUG = false,
         {
             type: 'input',
             name: 'key',
-            message: 'Key',
+            message: 'Key (e.g. \'scroll-configui\')',
             validate: function (value) {
                 var pass = value.match(/^[a-z][a-z0-9_-]+$/i);
                 if (pass) {
-                    return true;
+                    if (fs.existsSync(path.join(process.cwd(), 'src', 'main', 'frontend', value))) {
+                        return "SPA key '" + value + "' already exists.";
+                    } else {
+                        return true;
+                    }
                 } else {
-                    return "Please enter a valid SPA key (start with a letter & only alpha-numeric characters and '-' and '_' are allowed.";
+                    return "Please enter a valid SPA key (starts with a letter & contains only alpha-numeric characters, '-', and '_'.";
                 }
             }
         },
@@ -127,7 +131,7 @@ function main(args) {
         .then(showWelcomeMessage)
         .then(loadAtlassianPluginXml)
         .then(getLatestSparkVersion)
-        //.then(readSpaParams)
+        .then(readSpaParams)
 
         .then(setupFrontendDir)
         .then(setupPackageJson)
