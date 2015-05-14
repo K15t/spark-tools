@@ -1,7 +1,7 @@
 {
   "name": "spark-tools",
-  "version": "0.0.2",
-  "description": "Developer tools for the SPARK framework (more info: https://github.com/K15t/spark).",
+  "version": "0.0.3",
+  "description": "Developer tools for the SPARK framework (more info: http://www.k15t.com/display/SPARK).",
   "preferGlobal": true,
   "bin": {
     "spark": "index.js"

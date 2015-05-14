@@ -1,35 +1,40 @@
 # SPARK Tools
 
-__NOTE: This is alpha.__
+__NOTE: The SPARK Tools are beta software.__
 
-SPARK tools provide tools for working with the SPARK framework.
+SPARK tools provide command line tools for working with the SPARK framework.
+
+More Information & full documentation: http://www.k15t.com/display/SPARK
 
 
 # Installing
 
-The SPARK tools should be installed globally.
+Being command-line tools, the SPARK tools should be installed globally.
 
 ```
-$ npm install --global spark-tools 
+$ npm install -g spark-tools 
 ```
 
 
 # Using
 
 Go to an Atlassian add-on project (Confluence add-ons are currently supported)
-and execute ```spark```
+and run the spark command:
+
+```
+$ spark
+```
 
 
 # Developing
 
-1. checkout project
-2. do ```npm link```
-3. in any project folder to ```spa-create-spa```  
+1. Checkout project
+2. Do ```npm link```
+3. In any project folder to ```spark```  
 
 
 # TODO
 
-* Check Atlassian host application, and support for JIRA (currently only Confluence is supported)
+* Support JIRA (currently only Confluence is supported)
 * Add real-life Gulp build
-* Add web-items to navigate to app (instead of whenIType '1', etc.)
-* 'Close' and 'help' buttons should work f  or dialog app
+* 'Close' and 'help' buttons should work for dialog app
