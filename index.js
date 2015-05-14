@@ -34,13 +34,14 @@ function main(args) {
     var project = {
         cwd: process.cwd(),
         hostApp: undefined,
-        spa: { // ========= this is for development only
+        spa: { // ========= this is for debugging only (comment out .then(readSpaParams))
             key: 'default-spa-key',
             name: 'Default SPA Name',
+            path: path.join(process.cwd(), 'src', 'main', 'spark', 'default-spa-key'),
             type: 'dialog',
             template: 'angular1x-helloworld',
             framework: 'angular1x'
-        },     // ========= /this is temp only
+        },     // ========= /this is for debugging only
         atlassianPlugin: {
             path: path.join(process.cwd(), 'src', 'main', 'resources', 'atlassian-plugin.xml'),
             $: undefined
@@ -64,7 +65,7 @@ function main(args) {
         .then(getHostApp)
         .then(loadAtlassianPluginXml)
         .then(getLatestSparkVersion)
-        .then(readSpaParams)
+        //.then(readSpaParams)
 
         .then(setupSparkDir)
         .then(setupPackageJson)
@@ -277,6 +278,10 @@ function readSpaParams(project) {
 function setupSparkDir(project) {
     var deferred = Q.defer();
 
+    if (fs.existsSync(project.spa.path)) {
+        deferred.reject(new Error("SPA key '" + project.spa.key + "' already exists."));
+    }
+
     try {
         fs.mkdirSync(project.sparkDir.path);
         deferred.resolve(project);
@@ -330,7 +335,7 @@ function manipulatePomXml(project) {
     var deferred = Q.defer();
 
     _manipulate(project.pom.path, function addDependency($, rawContent) {
-        if ($('project > repositories > repository > url:contains(SPARK_MAVEN_REPO)').length) {
+        if ($('project > repositories > repository > url:contains(' + SPARK_MAVEN_REPO + ')').length) {
             // repository already set up
             return rawContent;
         }
@@ -399,9 +404,7 @@ function manipulatePomXml(project) {
     });
 
     _manipulate(project.pom.path, function addFrontendMavenPlugin($, rawContent) {
-        var mfpEl = $('project > build > plugins > plugin' +
-        '        :has(> groupId:contains("com.github.eirslett"))' +
-        '        :has(> artifactId:contains("frontend-maven-plugin"))');
+        var mfpEl = $('project > build > plugins > plugin:has(> groupId:contains("com.github.eirslett")):has(> artifactId:contains("frontend-maven-plugin"))');
 
         var text, position;
 
@@ -520,6 +523,7 @@ function createTemplateApp(project) {
     var templateDir = path.join(__dirname, 'templates', project.hostApp, project.spa.template);
 
     if (!fs.existsSync(project.spa.path)) {
+        _debug(project.spa.path);
         fs.mkdirSync(project.spa.path);
     }
 
