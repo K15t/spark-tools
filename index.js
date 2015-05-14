@@ -20,76 +20,11 @@ var cheerio = require('cheerio'),
 
 
 var DEBUG = false,
-    SPARK_VERSION = '0.9.0', // update this every once in a while (the value will be replaced with the latest version in init()).
+    SPARK_VERSION = '0.9.2', // update this every once in a while (the value will be replaced with the latest version in init()).
     SPARK_MAVEN_REPO = 'https://nexus.k15t.com/content/repositories/releases',
     FRONTEND_MAVEN_PLUGIN_VERSION = '0.0.23',
     NODE_VERSION = 'v0.10.33',
-    NPM_VERSION = '1.4.28',
-    CONFIG_PARAMS = [
-        {
-            type: 'input',
-            name: 'key',
-            message: 'Key (e.g. \'scroll-configui\')',
-            validate: function (value) {
-                var pass = value.match(/^[a-z][a-z0-9_-]+$/i);
-                if (pass) {
-                    if (fs.existsSync(path.join(process.cwd(), 'src', 'main', 'frontend', value))) {
-                        return "SPA key '" + value + "' already exists.";
-                    } else {
-                        return true;
-                    }
-                } else {
-                    return "Please enter a valid SPA key (starts with a letter & contains only alpha-numeric characters, '-', and '_'.";
-                }
-            }
-        },
-        {
-            type: 'input',
-            name: 'name',
-            message: 'Name'
-        },
-        {
-            type: 'list',
-            name: 'type',
-            message: 'SPA Type:',
-            choices: [
-                {
-                    name: 'Admin App',
-                    value: 'admin'
-                },
-                {
-                    name: 'Dialog App',
-                    value: 'dialog'
-                },
-                {
-                    name: 'Space App (Confluence-only)',
-                    value: 'space'
-                }
-            ]
-        },
-        {
-            type: 'list',
-            name: 'template',
-            message: 'SPA Template:',
-            'default': 'angular1x-helloworld',
-            choices: [
-                {
-                    name: 'AngularJS 1.x (Hello World)',
-                    value: 'angular1x-helloworld'
-                    //},
-                    //{
-                    //    name: 'AngularJS 1.x (with Gulp)',
-                    //    value: 'angular1x-gulp'
-                }
-            ]
-        },
-        {
-            type: 'confirm',
-            name: 'everythingOk',
-            message: 'About to create SPA. Everything ok?',
-            'default': true
-        }
-    ];
+    NPM_VERSION = '1.4.28';
 
 
 var __dirname;
@@ -101,7 +36,7 @@ function main(args) {
 
     var project = {
         cwd: process.cwd(),
-        hostApp: 'confluence',
+        hostApp: undefined,
         spa: { // ========= this is for development only
             key: 'default-spa-key',
             name: 'Default SPA Name',
@@ -117,11 +52,11 @@ function main(args) {
             path: path.join(process.cwd(), 'pom.xml'),
             json: undefined
         },
-        frontendDir: {
-            path: path.join(process.cwd(), 'src', 'main', 'frontend')
+        sparkDir: {
+            path: path.join(process.cwd(), 'src', 'main', 'spark')
         },
         packageJson: {
-            path: path.join(process.cwd(), 'src', 'main', 'frontend', 'package.json'),
+            path: path.join(process.cwd(), 'src', 'main', 'spark', 'package.json'),
             json: undefined
         }
     };
@@ -133,7 +68,7 @@ function main(args) {
         .then(getLatestSparkVersion)
         .then(readSpaParams)
 
-        .then(setupFrontendDir)
+        .then(setupSparkDir)
         .then(setupPackageJson)
         .then(manipulatePomXml)
 
@@ -249,14 +184,78 @@ function getLatestSparkVersion(project) {
 function readSpaParams(project) {
     var deferred = Q.defer();
 
-    inquirer.prompt(CONFIG_PARAMS, function (answers) {
+    inquirer.prompt([
+        {
+            type: 'input',
+            name: 'key',
+            message: 'Key (e.g. \'scroll-configui\')',
+            validate: function (value) {
+                var pass = value.match(/^[a-z][a-z0-9_-]+$/i);
+                if (pass) {
+                    if (fs.existsSync(path.join(project.sparkDir.path, value))) {
+                        return "SPA key '" + value + "' already exists.";
+                    } else {
+                        return true;
+                    }
+                } else {
+                    return "Please enter a valid SPA key (starts with a letter & contains only alpha-numeric characters, '-', and '_'.";
+                }
+            }
+        },
+        {
+            type: 'input',
+            name: 'name',
+            message: 'Name'
+        },
+        {
+            type: 'list',
+            name: 'type',
+            message: 'SPA Type:',
+            choices: [
+                {
+                    name: 'Admin App',
+                    value: 'admin'
+                },
+                {
+                    name: 'Dialog App',
+                    value: 'dialog'
+                },
+                {
+                    name: 'Space App (Confluence-only)',
+                    value: 'space'
+                }
+            ]
+        },
+        {
+            type: 'list',
+            name: 'template',
+            message: 'SPA Template:',
+            'default': 'angular1x-helloworld',
+            choices: [
+                {
+                    name: 'AngularJS 1.x (Hello World)',
+                    value: 'angular1x-helloworld'
+                    //},
+                    //{
+                    //    name: 'AngularJS 1.x (with Gulp)',
+                    //    value: 'angular1x-gulp'
+                }
+            ]
+        },
+        {
+            type: 'confirm',
+            name: 'everythingOk',
+            message: 'About to create SPA. Everything ok?',
+            'default': true
+        }
+    ], function (answers) {
         project.spa = answers;
 
         if (!answers.everythingOk) {
             deferred.reject(new Error('Aborted.'));
         } else {
-            project.spa.framework = 'angular1x';  // we only support angular 1x at the moment
-            project.spa.path = path.join('src', 'main', 'frontend', project.spa.key);
+            project.spa.framework = 'angular1x';  // TODO @stefan we only support angular 1x at the moment
+            project.spa.path = path.join(project.sparkDir.path, project.spa.key);
             delete project.spa.everythingOk;
             deferred.resolve(project);
         }
@@ -265,16 +264,16 @@ function readSpaParams(project) {
     return deferred.promise;
 }
 
-function setupFrontendDir(project) {
+function setupSparkDir(project) {
     var deferred = Q.defer();
 
     try {
-        fs.mkdirSync(project.frontendDir.path);
+        fs.mkdirSync(project.sparkDir.path);
         deferred.resolve(project);
 
     } catch (e) {
         if (e.code === 'EEXIST') {
-            _debug('\'' + project.frontendDir.path + '\' already exists.');
+            _debug('\'' + project.sparkDir.path + '\' already exists.');
             deferred.resolve(project);
 
         } else {
@@ -347,7 +346,7 @@ function manipulatePomXml(project) {
         var position = $('project > dependencies > dependency')[0].startIndex;
         var text = '<dependency><!-- added by spark-tools -->\n' +
             '            <groupId>com.k15t.spark</groupId>\n' +
-            '            <artifactId>spark-confluence</artifactId>\n' +
+            '            <artifactId>spark-' + project.hostApp + '</artifactId>\n' +
             '            <version>' + SPARK_VERSION + '</version>\n' +
             '        </dependency><!-- /added by spark-tools -->\n        ';
         return [rawContent.slice(0, position), text, rawContent.slice(position)].join('');
@@ -403,7 +402,7 @@ function manipulatePomXml(project) {
                 '                <artifactId>frontend-maven-plugin</artifactId>\n' +
                 '                <version>' + FRONTEND_MAVEN_PLUGIN_VERSION + '</version>\n' +
                 '                <configuration>\n' +
-                '                    <workingDirectory>src/main/frontend</workingDirectory>\n' +
+                '                    <workingDirectory>src/main/spark</workingDirectory>\n' +
                 '                </configuration>\n' +
                 '                <executions>\n' +
                 '                    <execution>\n' +
@@ -422,7 +421,7 @@ function manipulatePomXml(project) {
                 '                            <goal>npm</goal>\n' +
                 '                        </goals>\n' +
                 '                    </execution>\n' +
-                '                    <!-- @@spark-tools:build.execs@@ -->\n' +    // TODO find better solution for this
+                '                    <!-- @@spark-tools:build.execs@@ -->\n' +    // TODO @stefan find better solution for this
                 '                </executions>\n' +
                 '            </plugin><!-- /added by spark-tools -->\n            ';
 
@@ -435,7 +434,7 @@ function manipulatePomXml(project) {
 
     _manipulate(project.pom.path, function addGulpExecution($, rawContent) {
         var executionFragment = _renderFragment(project, path.join(__dirname, 'templates', 'pom-execution.handlebars')) + '\n' +
-            '                    <!-- @@spark-tools:build.execs@@ -->';
+            '                    <!-- @@spark-tools:build.execs@@ -->';             // TODO @stefan this is not nice...
         return rawContent.replace('<!-- @@spark-tools:build.execs@@ -->', executionFragment);
     });
 
@@ -494,7 +493,7 @@ function _registerHandlebarHelpers(project) {
 function manipulateAtlassianPluginXml(project) {
     var deferred = Q.defer();
 
-    var text = _renderFragment(project, path.join(__dirname, 'templates', 'confluence', 'atlassian-plugin.handlebars'));
+    var text = _renderFragment(project, path.join(__dirname, 'templates', project.hostApp, 'atlassian-plugin.handlebars'));
 
     var atlassianPluginXmlContent = fs.readFileSync(project.atlassianPlugin.path, 'utf8');
     var output = atlassianPluginXmlContent.replace('</atlassian-plugin>', text + '\n</atlassian-plugin>');
@@ -509,10 +508,9 @@ function createTemplateApp(project) {
     var deferred = Q.defer();
 
     var templateDir = path.join(__dirname, 'templates', project.hostApp, project.spa.template);
-    var spaDir = path.join(project.cwd, 'src', 'main', 'frontend', project.spa.key);
 
-    if (!fs.existsSync(spaDir)) {
-        fs.mkdirSync(spaDir);
+    if (!fs.existsSync(project.spa.path)) {
+        fs.mkdirSync(project.spa.path);
     }
 
     glob('**/*', {
@@ -549,7 +547,7 @@ function createTemplateApp(project) {
 function addDevDependencies(project) {
     var deferred = Q.defer();
 
-    // TODO have templates add their dependencies here
+    // TODO have project templates add their dependencies here
 
     deferred.resolve(project);
     return deferred.promise;
