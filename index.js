@@ -6,6 +6,7 @@
 'use strict';
 
 var cheerio = require('cheerio'),
+    extend = require('extend'),
     fs = require('fs'),
     glob = require('glob'),
     Handlebars = require('handlebars'),
@@ -39,8 +40,11 @@ function main(args) {
             name: 'Default SPA Name',
             path: path.join(process.cwd(), 'src', 'main', 'spark', 'default-spa-key'),
             type: 'dialog',
-            template: 'angular1x-helloworld',
-            framework: 'angular1x'
+            template: {
+                name: 'angular1x-helloworld',
+                framework: 'angular1x',
+                path: path.join(__dirname, 'templates', 'confluence', 'angular1x-helloworld')
+            }
         },     // ========= /this is for debugging only
         atlassianPlugin: {
             path: path.join(process.cwd(), 'src', 'main', 'resources', 'atlassian-plugin.xml'),
@@ -251,7 +255,16 @@ function readSpaParams(project) {
                     //    name: 'AngularJS 1.x (with Gulp)',
                     //    value: 'angular1x-gulp'
                 }
-            ]
+            ],
+            filter: function (value) {
+                return ({
+                    'angular1x-helloworld': {
+                        name: 'angular1x-helloworld',
+                        framework: 'angular1x',
+                        path: path.join(__dirname, 'templates', project.hostApp, 'angular1x-helloworld')
+                    }
+                })[value];
+            }
         },
         {
             type: 'confirm',
@@ -265,7 +278,6 @@ function readSpaParams(project) {
         if (!answers.everythingOk) {
             deferred.reject(new Error('Aborted.'));
         } else {
-            project.spa.framework = 'angular1x';  // TODO @stefan we only support angular 1x at the moment
             project.spa.path = path.join(project.sparkDir.path, project.spa.key);
             delete project.spa.everythingOk;
             deferred.resolve(project);
@@ -310,9 +322,7 @@ function setupPackageJson(project) {
             fs.writeFileSync(project.packageJson.path, JSON.stringify({
                 'name': project.pom.$('project > artifactId').text(),
                 'version': '0.0.1',
-                'devDependencies': {
-                    'gulp': '^3.8.11'
-                }
+                'devDependencies': {}
             }, null, 2) + '\n');
         } catch (e) {
             deferred.reject(e);
@@ -446,7 +456,7 @@ function manipulatePomXml(project) {
     });
 
     _manipulate(project.pom.path, function addGulpExecution($, rawContent) {
-        var executionFragment = _renderFragment(project, path.join(__dirname, 'templates', 'pom-execution.handlebars')) + '\n' +
+        var executionFragment = _renderFragment(project, path.join(project.spa.template.path, '_fragments', 'pom-execution.handlebars')) + '\n' +
             '                    <!-- @@spark-tools:build.execs@@ -->';             // TODO @stefan this is not nice...
         return rawContent.replace('<!-- @@spark-tools:build.execs@@ -->', executionFragment);
     });
@@ -506,7 +516,7 @@ function _registerHandlebarHelpers(project) {
 function manipulateAtlassianPluginXml(project) {
     var deferred = Q.defer();
 
-    var text = _renderFragment(project, path.join(__dirname, 'templates', project.hostApp, 'atlassian-plugin.handlebars'));
+    var text = _renderFragment(project, path.join(project.spa.template.path, '_fragments', 'atlassian-plugin.handlebars'));
 
     var atlassianPluginXmlContent = fs.readFileSync(project.atlassianPlugin.path, 'utf8');
     var output = atlassianPluginXmlContent.replace('</atlassian-plugin>', text + '\n</atlassian-plugin>');
@@ -520,20 +530,19 @@ function manipulateAtlassianPluginXml(project) {
 function createTemplateApp(project) {
     var deferred = Q.defer();
 
-    var templateDir = path.join(__dirname, 'templates', project.hostApp, project.spa.template);
-
     if (!fs.existsSync(project.spa.path)) {
         _debug(project.spa.path);
         fs.mkdirSync(project.spa.path);
     }
 
     glob('**/*', {
-        cwd: templateDir
+        cwd: project.spa.template.path,
+        ignore: '_fragments/**'
     }, function (err, files) {
         var output;
 
         files.forEach(function (file) {
-            var src = path.join(templateDir, file);
+            var src = path.join(project.spa.template.path, file);
             var dest = path.join(project.cwd, file.replace('__spa.key__', project.spa.key));
 
             if (fs.statSync(src).isDirectory()) {
@@ -561,7 +570,19 @@ function createTemplateApp(project) {
 function addDevDependencies(project) {
     var deferred = Q.defer();
 
-    // TODO have project templates add their dependencies here
+    try {
+        var packageJsonFragmentPath = path.join(project.spa.template.path, '_fragments', 'package.json')
+        var packageJsonFragmentContent = fs.readFileSync(packageJsonFragmentPath, 'utf8');
+        var packageJsonFragment = JSON.parse(packageJsonFragmentContent);
+
+        project.packageJson.json = extend(true, project.packageJson.json, packageJsonFragment);
+
+        fs.writeFileSync(project.packageJson.path, JSON.stringify(project.packageJson.json, null, 2) + '\n');
+        deferred.resolve(project);
+
+    } catch (e) {
+        deferred.reject(e);
+    }
 
     deferred.resolve(project);
     return deferred.promise;
