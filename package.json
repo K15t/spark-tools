@@ -12,6 +12,7 @@
     "handlebars": "^3.0.3",
     "inquirer": "0.8.2",
     "q": "1.2.0",
+    "request": "^2.55.0",
     "string": "^3.1.1",
     "xml2js": "0.4.8"
   },
@@ -34,5 +35,5 @@
   "bugs": {
     "url": "https://github.com/K15t/spark-tooling/issues"
   },
-  "homepage": "https://github.com/K15t/spark-tooling"
+  "homepage": "https://github.com/K15t/spark-tools"
 }

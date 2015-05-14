@@ -14,12 +14,14 @@ var cheerio = require('cheerio'),
     inquirer = require('inquirer'),
     path = require('path'),
     Q = require('q'),
+    request = require('request'),
     S = require('string'),
     xml2js = require('xml2js');
 
 
 var DEBUG = false,
-    SPARK_VERSION = '0.9.1-SNAPSHOT',
+    SPARK_VERSION = '0.9.0', // update this every once in a while (the value will be replaced with the latest version in init()).
+    SPARK_MAVEN_REPO = 'https://nexus.k15t.com/content/repositories/releases',
     FRONTEND_MAVEN_PLUGIN_VERSION = '0.0.23',
     NODE_VERSION = 'v0.10.33',
     NPM_VERSION = '1.4.28',
@@ -48,16 +50,16 @@ var DEBUG = false,
             message: 'SPA Type:',
             choices: [
                 {
+                    name: 'Admin App',
+                    value: 'admin'
+                },
+                {
                     name: 'Dialog App',
                     value: 'dialog'
                 },
                 {
                     name: 'Space App (Confluence-only)',
                     value: 'space'
-                },
-                {
-                    name: 'Admin App',
-                    value: 'admin'
                 }
             ]
         },
@@ -70,10 +72,10 @@ var DEBUG = false,
                 {
                     name: 'AngularJS 1.x (Hello World)',
                     value: 'angular1x-helloworld'
-                //},
-                //{
-                //    name: 'AngularJS 1.x (with Gulp)',
-                //    value: 'angular1x-gulp'
+                    //},
+                    //{
+                    //    name: 'AngularJS 1.x (with Gulp)',
+                    //    value: 'angular1x-gulp'
                 }
             ]
         },
@@ -96,8 +98,9 @@ function main(args) {
     var project = {
         cwd: process.cwd(),
         hostApp: 'confluence',
-        spa: { // ========= TODO @stefan remove, this is temp only (to be loaded from inquirer)
-            name: 'spx-asdfasdfasdf',
+        spa: { // ========= this is for development only
+            key: 'default-spa-key',
+            name: 'Default SPA Name',
             type: 'dialog',
             template: 'angular1x-helloworld',
             framework: 'angular1x'
@@ -123,7 +126,8 @@ function main(args) {
     loadPomXml(project)
         .then(showWelcomeMessage)
         .then(loadAtlassianPluginXml)
-        .then(readSpaParams)
+        .then(getLatestSparkVersion)
+        //.then(readSpaParams)
 
         .then(setupFrontendDir)
         .then(setupPackageJson)
@@ -144,13 +148,24 @@ function main(args) {
 
 }
 
+function _debug(message) {
+    if (DEBUG) {
+        if (typeof message === "object" && !Array.isArray(message) && message !== null) {
+            console.log('[DEBUG]  ' + JSON.stringify(message, null, '  '));
+        } else {
+            console.log('[DEBUG]  ' + message);
+        }
+    }
+}
+_debug("Debugging enabled.");
+
 function loadPomXml(project) {
     var deferred = Q.defer();
 
     fs.readFile(project.pom.path, function (err, data) {
         if (err) {
             if (err.code === 'ENOENT') {
-                deferred.reject(new Error('Can\'t open pom.xml.'));
+                deferred.reject(new Error('Can\'t open pom.xml. Is this an Atlassian add-on project?'));
             } else {
                 deferred.reject(err);
             }
@@ -160,7 +175,7 @@ function loadPomXml(project) {
                 if (err) {
                     deferred.reject(err);
                 } else if (result.project.packaging[0] !== 'atlassian-plugin') {
-                    deferred.reject(new Error('Packaging is not \'atlassian plugin\'.'));
+                    deferred.reject(new Error('Packaging is not \'atlassian plugin\'. Is this an Atlassian add-on project?'));
                 } else {
                     project.pom.json = result;
                     deferred.resolve(project);
@@ -204,6 +219,29 @@ function loadAtlassianPluginXml(project) {
     return deferred.promise;
 }
 
+function getLatestSparkVersion(project) {
+    var deferred = Q.defer();
+
+    request(SPARK_MAVEN_REPO + '/com/k15t/spark/spark/maven-metadata.xml', function (error, response, html) {
+        if (!error && response.statusCode == 200) {
+            var $ = cheerio.load(html, {
+                withDomLvl1: true,
+                withStartIndices: true,
+                xmlMode: true
+            });
+
+            SPARK_VERSION = $('metadata versioning release').text();
+            deferred.resolve(project);
+        } else {
+            _debug('Could not load detect latest SPARK version. Using ' + SPARK_VERSION + '.');
+            deferred.resolve(project);
+        }
+
+    });
+
+    return deferred.promise;
+}
+
 function readSpaParams(project) {
     var deferred = Q.defer();
 
@@ -232,7 +270,7 @@ function setupFrontendDir(project) {
 
     } catch (e) {
         if (e.code === 'EEXIST') {
-            console.log('\'' + project.frontendDir.path + '\' already exists.');
+            _debug('\'' + project.frontendDir.path + '\' already exists.');
             deferred.resolve(project);
 
         } else {
@@ -247,7 +285,7 @@ function setupPackageJson(project) {
     var deferred = Q.defer();
 
     if (fs.existsSync(project.packageJson.path)) {
-        console.log('\'' + project.packageJson.path + '\' already exists.');
+        _debug('\'' + project.packageJson.path + '\' already exists.');
 
     } else {
         try {
@@ -279,6 +317,24 @@ function manipulatePomXml(project) {
     var deferred = Q.defer();
 
     _manipulate(project.pom.path, function addDependency($, rawContent) {
+        if ($('project > repositories > repository > url:contains(SPARK_MAVEN_REPO)').length) {
+            // repository already set up
+            return rawContent;
+        }
+
+        var position = $('project > dependencies')[0].startIndex;
+        var text = '<repositories><!-- added by spark-tools -->\n' +
+            '        <repository>\n' +
+            '            <id>spark-repo</id>\n' +
+            '            <name>K15t SPARK Repository</name>\n' +
+            '            <url>' + SPARK_MAVEN_REPO + '</url>\n' +
+            '            <layout>default</layout>\n' +
+            '        </repository>\n' +
+            '    </repositories><!-- /added by spark-tools -->\n\n    ';
+        return [rawContent.slice(0, position), text, rawContent.slice(position)].join('');
+    });
+
+    _manipulate(project.pom.path, function addK15tRepository($, rawContent) {
         if ($('project > dependencies > dependency > groupId:contains("com.k15t.spark")').length) {
             // dependency already set up
             return rawContent;
