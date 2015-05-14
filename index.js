@@ -616,6 +616,7 @@ function showSuccessInfo(project) {
 
     console.log('Set-up of SPA complete.');
     console.log('Run \'atlas-debug\' to run development system and look for navigation entry named ' + project.spa.name + '.');
+    console.log('If the development system is already running, build and deploy with \'atlas-package && atlas-install-plugin\'.');
 
     deferred.resolve(project);
     return deferred.promise;
