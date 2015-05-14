@@ -3,8 +3,6 @@
 // To be installed as global package to work as a command line tool in any
 // AMPS project, see: http://javascriptplayground.com/blog/2015/03/node-command-line-tool/
 
-// TODO check for existing SPA names
-
 'use strict';
 
 var cheerio = require('cheerio'),
@@ -15,8 +13,7 @@ var cheerio = require('cheerio'),
     path = require('path'),
     Q = require('q'),
     request = require('request'),
-    S = require('string'),
-    xml2js = require('xml2js');
+    S = require('string');
 
 
 var DEBUG = false,
@@ -46,11 +43,11 @@ function main(args) {
         },     // ========= /this is temp only
         atlassianPlugin: {
             path: path.join(process.cwd(), 'src', 'main', 'resources', 'atlassian-plugin.xml'),
-            json: undefined
+            $: undefined
         },
         pom: {
             path: path.join(process.cwd(), 'pom.xml'),
-            json: undefined
+            $: undefined
         },
         sparkDir: {
             path: path.join(process.cwd(), 'src', 'main', 'spark')
@@ -104,22 +101,18 @@ function loadPomXml(project) {
     fs.readFile(project.pom.path, function (err, data) {
         if (err) {
             if (err.code === 'ENOENT') {
-                deferred.reject(new Error('Can\'t open pom.xml. Is this an Atlassian add-on project?'));
+                deferred.reject(new Error('Can\'t open pom.xml. Is this an Atlassian SDK project?'));
             } else {
                 deferred.reject(err);
             }
         } else {
-            var parser = new xml2js.Parser();
-            parser.parseString(data, function (err, result) {
-                if (err) {
-                    deferred.reject(err);
-                } else if (result.project.packaging[0] !== 'atlassian-plugin') {
-                    deferred.reject(new Error('Packaging is not \'atlassian plugin\'. Is this an Atlassian add-on project?'));
-                } else {
-                    project.pom.json = result;
-                    deferred.resolve(project);
-                }
-            });
+            project.pom.$ = cheerio(data);
+
+            if (project.pom.$('project > packaging').text() !== 'atlassian-plugin') {
+                deferred.reject(new Error('Packaging is not \'atlassian plugin\'. Is this an Atlassian SDK project?'));
+            }
+
+            deferred.resolve(project);
         }
     });
 
@@ -143,15 +136,8 @@ function loadAtlassianPluginXml(project) {
         if (err) {
             deferred.reject(err);
         } else {
-            var parser = new xml2js.Parser();
-            parser.parseString(data, function (err, result) {
-                if (err) {
-                    deferred.reject(err);
-                } else {
-                    project.atlassianPlugin.json = result;
-                    deferred.resolve(project);
-                }
-            });
+            atlassianPlugin.pom.$ = cheerio(data);
+            deferred.resolve(project);
         }
     });
 
@@ -293,7 +279,7 @@ function setupPackageJson(project) {
     } else {
         try {
             fs.writeFileSync(project.packageJson.path, JSON.stringify({
-                'name': project.pom.json.project.artifactId[0],
+                'name': project.pom.$('project > artifactId').text(),
                 'version': '0.0.1',
                 'devDependencies': {
                     'gulp': '^3.8.11'
