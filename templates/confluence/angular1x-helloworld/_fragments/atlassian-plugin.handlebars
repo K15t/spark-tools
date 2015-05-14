@@ -7,6 +7,14 @@
             <param-value>/spark/{{spa.key}}</param-value>
         </init-param>
     </servlet>
+{{#isAdminApp}}
+    <web-item name="{{spa.name}} SPARK App Web-Item" key="spark-{{spa.key}}-webitem" section="system.admin/configuration" weight="10">
+        <description>Adds a menu entry for the {{spa.name}} SPARK app to the admin console.</description>
+
+        <label>{{spa.name}}</label>
+        <link linkId="spark-{{spa.key}}-webitem">/plugins/servlet/{{spa.key}}</link>
+    </web-item>
+{{/isAdminApp}}
 {{#isDialogApp}}
 
     <web-resource name="{{spa.name}} SPARK App Bootstrap Resources" key="spark-{{spa.key}}-web-resource">
