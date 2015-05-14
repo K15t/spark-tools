@@ -11,6 +11,7 @@ var cheerio = require('cheerio'),
     glob = require('glob'),
     handlebars = require('handlebars'),
     inquirer = require('inquirer'),
+    mkdirp = require('mkdirp'),
     path = require('path'),
     q = require('q'),
     request = require('request'),
@@ -37,6 +38,7 @@ function main(args) {
         hostApp: undefined,
         spa: { // ========= this is for debugging only (comment out .then(readSpaParams))
             key: 'default-spa-key',
+            keyForJavaPackage: 'default_spa_key',
             name: 'Default SPA Name',
             path: path.join(process.cwd(), 'src', 'main', 'spark', 'default-spa-key'),
             type: 'dialog',
@@ -77,6 +79,7 @@ function main(args) {
 
         .then(manipulateAtlassianPluginXml)
         .then(createTemplateApp)
+        .then(generateSpaceAppAction)
 
         .then(addDevDependencies)
 
@@ -203,7 +206,7 @@ function readSpaParams(project) {
         {
             type: 'input',
             name: 'key',
-            message: 'Key (e.g. \'scroll-configui\')',
+            message: 'Key (e.g. \'scroll-config\')',
             validate: function (value) {
                 var pass = value.match(/^[a-z][a-z0-9_-]+$/i);
                 if (pass) {
@@ -279,6 +282,7 @@ function readSpaParams(project) {
             deferred.reject(new Error('Aborted.'));
         } else {
             project.spa.path = path.join(project.sparkDir.path, project.spa.key);
+            project.spa.keyForJavaPackage = project.spa.key.replace('-', '_');
             delete project.spa.everythingOk;
             deferred.resolve(project);
         }
@@ -567,11 +571,30 @@ function createTemplateApp(project) {
     return deferred.promise;
 }
 
+function generateSpaceAppAction(project) {
+    var deferred = q.defer();
+
+    if (project.spa.type === 'space') {
+        var templatePath = path.join(project.spa.template.path, '_fragments', 'GeneratedSpaceAppAction.java.handlebars');
+        var templateString = fs.readFileSync(templatePath, 'utf8');
+        var spaceActionJava = handlebars.compile(templateString, {
+            strict: true
+        })(project);
+
+        var packagePath = path.join(process.cwd(), 'src', 'main', 'java', 'spark', 'GENERATED', project.spa.keyForJavaPackage);
+        mkdirp.sync(packagePath, '0755' );
+        fs.writeFileSync(path.join(packagePath, 'GeneratedSpaceAppAction.java'), spaceActionJava);
+    }
+
+    deferred.resolve(project);
+    return deferred.promise;
+}
+
 function addDevDependencies(project) {
     var deferred = q.defer();
 
     try {
-        var packageJsonFragmentPath = path.join(project.spa.template.path, '_fragments', 'package.json')
+        var packageJsonFragmentPath = path.join(project.spa.template.path, '_fragments', 'package.json');
         var packageJsonFragmentContent = fs.readFileSync(packageJsonFragmentPath, 'utf8');
         var packageJsonFragment = JSON.parse(packageJsonFragmentContent);
 

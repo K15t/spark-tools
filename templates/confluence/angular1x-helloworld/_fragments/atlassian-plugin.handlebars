@@ -45,15 +45,22 @@
 {{/isDialogApp}}
 {{#isSpaceApp}}
 
-    <xwork key="{{spa.key}}-actions">
+    <xwork key="spark-{{spa.key}}-actions">
         <package name="{{spa.name}} SPARK App Action" extends="default" namespace="/spaces/{{spa.key}}">
             <default-interceptor-ref name="defaultStack"/>
-            <action name="index" class="com.k15t.spark.confluence.ConfluenceSpaceAppAction" method="index">
+            <action name="index" class="spark.GENERATED.{{spa.keyForJavaPackage}}.ConfluenceSpaceAppAction" method="index">
                 <result name="input" type="velocity">/com/k15t/spark/confluence/space-app.vm</result>
                 <result name="notpermitted" type="redirect">/pages/pagenotpermitted.action</result>
                 <param name="resource-path">/spark/{{spa.key}}</param>
             </action>
         </package>
     </xwork>
+
+    <web-item name="{{spa.name}} SPARK Web-Item" key="spark-{{spa.key}}-webitem" section="system.space.tools/addons" weight="82">
+        <description>Adds a tab entry for the {{spa.name}} SPARK app within the Space Tools / Add-ons section.</description>
+
+        <label>{{spa.name}}</label>
+        <link id="spark-{{spa.key}}-webitem">/spaces/{{spa.key}}/index.action?key=$generalUtil.urlEncode($helper.spaceKey)</link>
+    </web-item>
 {{/isSpaceApp}}
     <!-- /added by spark-tools -->
