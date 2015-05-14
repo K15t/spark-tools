@@ -27,6 +27,13 @@
             </transformer>
         </transformation>
     </web-resource>
+
+    <web-item name="{{spa.name}} SPARK App Web-Item" key="spark-{{spa.key}}-webitem" section="system.content.action" weight="200">
+        <description>Adds a menu entry for the {{spa.name}} SPARK app to the tools menu.</description>
+
+        <label>{{spa.name}}</label>
+        <link linkId="spark-{{spa.key}}-webitem">#</link>
+    </web-item>
 {{/isDialogApp}}
 {{#isSpaceApp}}
 

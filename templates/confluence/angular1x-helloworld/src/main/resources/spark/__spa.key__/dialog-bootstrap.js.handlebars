@@ -6,8 +6,7 @@ AJS.toInit(function () {
 
     var dialog1;
 
-    // TODO create web-item in atlassian-plugin.xml and register click handler here.
-    AJS.whenIType('1').execute(function () {
+    AJS.$('#spark-{{spa.key}}-webitem').on('click', function () {
         if (!dialog1) {
             dialog1 = spark.createDialogApp('{{spa.key}}', '/plugins/servlet/{{spa.key}}/');
         } else {
