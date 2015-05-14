@@ -65,7 +65,7 @@ function main(args) {
         .then(getHostApp)
         .then(loadAtlassianPluginXml)
         .then(getLatestSparkVersion)
-        //.then(readSpaParams)
+        .then(readSpaParams)
 
         .then(setupSparkDir)
         .then(setupPackageJson)
