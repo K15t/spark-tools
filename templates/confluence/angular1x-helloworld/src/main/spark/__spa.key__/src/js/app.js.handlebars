@@ -16,6 +16,9 @@
             $scope.user = {
                 'name': 'World'
             };
+{{#isAdminOrSpaceApp}}
+            $scope.angularVersion = angular.version.full;
+{{/isAdminOrSpaceApp}}
         });
 
 })();
