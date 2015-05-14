@@ -9,12 +9,12 @@ var cheerio = require('cheerio'),
     extend = require('extend'),
     fs = require('fs'),
     glob = require('glob'),
-    Handlebars = require('handlebars'),
+    handlebars = require('handlebars'),
     inquirer = require('inquirer'),
     path = require('path'),
-    Q = require('q'),
+    q = require('q'),
     request = require('request'),
-    S = require('string');
+    s = require('string');
 
 
 var DEBUG = false,
@@ -102,7 +102,7 @@ function _debug(message) {
 _debug("Debugging enabled.");
 
 function loadPomXml(project) {
-    var deferred = Q.defer();
+    var deferred = q.defer();
 
     fs.readFile(project.pom.path, function (err, data) {
         if (err) {
@@ -126,7 +126,7 @@ function loadPomXml(project) {
 }
 
 function getHostApp(project) {
-    var deferred = Q.defer();
+    var deferred = q.defer();
     var hostApp = '';
 
     try {
@@ -149,7 +149,7 @@ function getHostApp(project) {
 }
 
 function showWelcomeMessage(project) {
-    var deferred = Q.defer();
+    var deferred = q.defer();
 
     console.log('');
     console.log('SPARK // Create Single Page App');
@@ -159,7 +159,7 @@ function showWelcomeMessage(project) {
 }
 
 function loadAtlassianPluginXml(project) {
-    var deferred = Q.defer();
+    var deferred = q.defer();
 
     fs.readFile(project.atlassianPlugin.path, function (err, data) {
         if (err) {
@@ -174,7 +174,7 @@ function loadAtlassianPluginXml(project) {
 }
 
 function getLatestSparkVersion(project) {
-    var deferred = Q.defer();
+    var deferred = q.defer();
 
     request(SPARK_MAVEN_REPO + '/com/k15t/spark/spark/maven-metadata.xml', function (error, response, html) {
         if (!error && response.statusCode == 200) {
@@ -197,7 +197,7 @@ function getLatestSparkVersion(project) {
 }
 
 function readSpaParams(project) {
-    var deferred = Q.defer();
+    var deferred = q.defer();
 
     inquirer.prompt([
         {
@@ -288,7 +288,7 @@ function readSpaParams(project) {
 }
 
 function setupSparkDir(project) {
-    var deferred = Q.defer();
+    var deferred = q.defer();
 
     if (fs.existsSync(project.spa.path)) {
         deferred.reject(new Error("SPA key '" + project.spa.key + "' already exists."));
@@ -312,7 +312,7 @@ function setupSparkDir(project) {
 }
 
 function setupPackageJson(project) {
-    var deferred = Q.defer();
+    var deferred = q.defer();
 
     if (fs.existsSync(project.packageJson.path)) {
         _debug('\'' + project.packageJson.path + '\' already exists.');
@@ -342,7 +342,7 @@ function setupPackageJson(project) {
 }
 
 function manipulatePomXml(project) {
-    var deferred = Q.defer();
+    var deferred = q.defer();
 
     _manipulate(project.pom.path, function addDependency($, rawContent) {
         if ($('project > repositories > repository > url:contains(' + SPARK_MAVEN_REPO + ')').length) {
@@ -482,7 +482,7 @@ function _renderFragment(project, template) {
     _registerHandlebarHelpers(project);
 
     var templateString = fs.readFileSync(template, 'utf8');
-    return Handlebars.compile(templateString, {
+    return handlebars.compile(templateString, {
         strict: true
     })(project);
 }
@@ -493,7 +493,7 @@ function _registerHandlebarHelpers(project) {
         return;
     }
 
-    Handlebars.registerHelper({
+    handlebars.registerHelper({
         'isAdminApp': function (options) {
             return (project.spa.type === 'admin') ? options.fn(this) : options.inverse(this);
         },
@@ -514,7 +514,7 @@ function _registerHandlebarHelpers(project) {
 }
 
 function manipulateAtlassianPluginXml(project) {
-    var deferred = Q.defer();
+    var deferred = q.defer();
 
     var text = _renderFragment(project, path.join(project.spa.template.path, '_fragments', 'atlassian-plugin.handlebars'));
 
@@ -528,7 +528,7 @@ function manipulateAtlassianPluginXml(project) {
 }
 
 function createTemplateApp(project) {
-    var deferred = Q.defer();
+    var deferred = q.defer();
 
     if (!fs.existsSync(project.spa.path)) {
         _debug(project.spa.path);
@@ -550,9 +550,9 @@ function createTemplateApp(project) {
                     fs.mkdirSync(dest);
                 }
 
-            } else if (S(src).endsWith('.handlebars')) {
+            } else if (s(src).endsWith('.handlebars')) {
                 output = _renderFragment(project, src);
-                var filename = S(dest).chompRight('.handlebars').s;
+                var filename = s(dest).chompRight('.handlebars').s;
                 fs.writeFileSync(filename, output, 'utf8');
 
             } else {
@@ -568,7 +568,7 @@ function createTemplateApp(project) {
 }
 
 function addDevDependencies(project) {
-    var deferred = Q.defer();
+    var deferred = q.defer();
 
     try {
         var packageJsonFragmentPath = path.join(project.spa.template.path, '_fragments', 'package.json')
@@ -589,7 +589,7 @@ function addDevDependencies(project) {
 }
 
 function showSuccessInfo(project) {
-    var deferred = Q.defer();
+    var deferred = q.defer();
 
     console.log('Set-up of SPA complete.');
     console.log('Run \'atlas-debug\' to run development system.');
