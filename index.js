@@ -282,7 +282,7 @@ function readSpaParams(project) {
             deferred.reject(new Error('Aborted.'));
         } else {
             project.spa.path = path.join(project.sparkDir.path, project.spa.key);
-            project.spa.keyForJavaPackage = project.spa.key.replace('-', '_');
+            project.spa.keyForJavaPackage = project.spa.key.replace(/-/g, '_');
             delete project.spa.everythingOk;
             deferred.resolve(project);
         }
@@ -397,19 +397,19 @@ function manipulatePomXml(project) {
 
         } else if (ampsEl.find('configuration systemPropertyVariables *').length) {
             position = ampsEl.find('configuration systemPropertyVariables *')[0].startIndex;
-            text = '<spark.dev.dir>${project.basedir}/target/spark</spark.dev.dir><!-- added by spark-tools/ -->\n                                            ';
+            text = '<spark.dev.dir>${project.basedir}/target/spark-dev-builds</spark.dev.dir><!-- added by spark-tools/ -->\n                                            ';
 
         } else if (ampsEl.has('configuration *')) {
             position = ampsEl.find('configuration *')[0].startIndex;
             text = '<systemPropertyVariables><!-- added by spark-tools -->\n' +
-                '                        <spark.dev.dir>${project.basedir}/target/spark</spark.dev.dir>\n' +
+                '                        <spark.dev.dir>${project.basedir}/target/spark-dev-builds</spark.dev.dir>\n' +
                 '                    </systemPropertyVariables><!-- /added by spark-tools -->\n                    ';
 
         } else {
             position = ampsEl.startIndex;
             text = '<configuration><!-- added by spark-tools -->' +
                 '                    <systemPropertyVariables>\n' +
-                '                        <spark.dev.dir>${project.basedir}/target/spark</spark.dev.dir>\n' +
+                '                        <spark.dev.dir>${project.basedir}/target/spark-dev-builds</spark.dev.dir>\n' +
                 '                    </systemPropertyVariables>\n' +
                 '                </configuration><!-- /added by spark-tools -->\n                ';
         }

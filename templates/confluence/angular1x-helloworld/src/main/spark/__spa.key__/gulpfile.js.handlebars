@@ -10,7 +10,7 @@ gulp.task('default', function() {
 // to be executed during development
 gulp.task('dev', function() {
     gulp.src('src/**')
-        .pipe(gulp.dest('../../../../target/spark-dev-builds/{{spa.key}}'));
+        .pipe(gulp.dest('../../../../target/spark-dev-builds/spark/{{spa.key}}'));
 });
 
 // detects changes of any source file and kicks of the 'dev' task.
