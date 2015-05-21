@@ -138,13 +138,10 @@ function getHostApp(project) {
 }
 
 function showWelcomeMessage(project) {
-    var deferred = q.defer();
-
     console.log('');
     console.log('SPARK // Create Single Page App');
 
-    deferred.resolve(project);
-    return deferred.promise;
+    return q.resolve(project);
 }
 
 function loadAtlassianPluginXml(project) {
@@ -278,32 +275,26 @@ function readSpaParams(project) {
 }
 
 function setupSparkDir(project) {
-    var deferred = q.defer();
-
     if (fs.existsSync(project.spa.path)) {
-        deferred.reject(new Error("SPA key '" + project.spa.key + "' already exists."));
+        return q.reject(new Error("SPA key '" + project.spa.key + "' already exists."));
     }
 
     try {
         fs.mkdirSync(project.sparkDir.path);
-        deferred.resolve(project);
+        return q.resolve(project);
 
     } catch (e) {
         if (e.code === 'EEXIST') {
             debug('\'' + project.sparkDir.path + '\' already exists.');
-            deferred.resolve(project);
+            return q.resolve(project);
 
         } else {
-            deferred.reject(e);
+            return q.reject(e);
         }
     }
-
-    return deferred.promise;
 }
 
 function setupPackageJson(project) {
-    var deferred = q.defer();
-
     if (fs.existsSync(project.packageJson.path)) {
         debug('\'' + project.packageJson.path + '\' already exists.');
 
@@ -315,20 +306,18 @@ function setupPackageJson(project) {
                 'devDependencies': {}
             }, null, 2) + '\n');
         } catch (e) {
-            deferred.reject(e);
+            return q.reject(e);
         }
     }
 
     try {
         var packageJsonContent = fs.readFileSync(project.packageJson.path, 'utf8');
         project.packageJson.json = JSON.parse(packageJsonContent);
-        deferred.resolve(project);
+        return q.resolve(project);
 
     } catch (e) {
-        deferred.reject(e);
+        return q.reject(e);
     }
-
-    return deferred.promise;
 }
 
 function manipulatePomXml(project) {
@@ -504,8 +493,6 @@ function _registerHandlebarHelpers(project) {
 }
 
 function manipulateAtlassianPluginXml(project) {
-    var deferred = q.defer();
-
     var text = _renderFragment(project, path.join(project.spa.template.path, '_fragments', 'atlassian-plugin.handlebars'));
 
     var atlassianPluginXmlContent = fs.readFileSync(project.atlassianPlugin.path, 'utf8');
@@ -513,8 +500,7 @@ function manipulateAtlassianPluginXml(project) {
 
     fs.writeFileSync(project.atlassianPlugin.path, output, 'utf8');
 
-    deferred.resolve(project);
-    return deferred.promise;
+    return q.resolve(project);
 }
 
 function createTemplateApp(project) {
@@ -558,8 +544,6 @@ function createTemplateApp(project) {
 }
 
 function generateSpaceAppAction(project) {
-    var deferred = q.defer();
-
     if (project.spa.type === 'space') {
         var templatePath = path.join(project.spa.template.path, '_fragments', 'GeneratedSpaceAppAction.java.handlebars');
         var templateString = fs.readFileSync(templatePath, 'utf8');
@@ -572,13 +556,10 @@ function generateSpaceAppAction(project) {
         fs.writeFileSync(path.join(packagePath, 'GeneratedSpaceAppAction.java'), spaceActionJava);
     }
 
-    deferred.resolve(project);
-    return deferred.promise;
+    return q.resolve(project);
 }
 
 function addDevDependencies(project) {
-    var deferred = q.defer();
-
     try {
         var packageJsonFragmentPath = path.join(project.spa.template.path, '_fragments', 'package.json');
         var packageJsonFragmentContent = fs.readFileSync(packageJsonFragmentPath, 'utf8');
@@ -587,25 +568,19 @@ function addDevDependencies(project) {
         project.packageJson.json = extend(true, project.packageJson.json, packageJsonFragment);
 
         fs.writeFileSync(project.packageJson.path, JSON.stringify(project.packageJson.json, null, 2) + '\n');
-        deferred.resolve(project);
+        return q.resolve(project);
 
     } catch (e) {
-        deferred.reject(e);
+        return q.reject(e);
     }
-
-    deferred.resolve(project);
-    return deferred.promise;
 }
 
 function showSuccessInfo(project) {
-    var deferred = q.defer();
-
     console.log('Set-up of SPA complete.');
     console.log('Run \'atlas-debug\' to run development system and look for navigation entry named ' + project.spa.name + '.');
     console.log('If the development system is already running, build and deploy with \'atlas-package && atlas-install-plugin\'.');
 
-    deferred.resolve(project);
-    return deferred.promise;
+    return q.resolve(project);
 }
 
 main();
