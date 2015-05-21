@@ -26,12 +26,7 @@ var DEBUG = false,
     NPM_VERSION = '1.4.28';
 
 
-var __dirname;
-
-
 function main(args) {
-
-    __dirname = path.dirname(process.mainModule.filename);
 
     var project = {
         cwd: process.cwd(),
