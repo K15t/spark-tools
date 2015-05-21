@@ -7,6 +7,7 @@
 
 var cheerio = require('cheerio'),
     extend = require('extend'),
+    debug = require('debug')('spark'),
     fs = require('fs'),
     glob = require('glob'),
     handlebars = require('handlebars'),
@@ -18,8 +19,7 @@ var cheerio = require('cheerio'),
     s = require('string');
 
 
-var DEBUG = false,
-    SPARK_VERSION = '0.9.2', // update this every once in a while (the value will be replaced with the latest version in init()).
+var SPARK_VERSION = '0.9.2', // update this every once in a while (the value will be replaced with the latest version in init()).
     SPARK_MAVEN_REPO = 'https://nexus.k15t.com/content/repositories/releases',
     FRONTEND_MAVEN_PLUGIN_VERSION = '0.0.23',
     NODE_VERSION = 'v0.10.33',
@@ -81,23 +81,14 @@ function main(args) {
         .then(showSuccessInfo)
 
         .fail(function (err) {
-            DEBUG || console.log('...... ' + err.message);
-            DEBUG && console.log(err.stack);
+            debug.enabled || console.log('...... ' + err.message);
+            debug(err.stack);
         })
         .done();
 
 }
 
-function _debug(message) {
-    if (DEBUG) {
-        if (typeof message === "object" && !Array.isArray(message) && message !== null) {
-            console.log('[DEBUG]  ' + JSON.stringify(message, null, '  '));
-        } else {
-            console.log('[DEBUG]  ' + message);
-        }
-    }
-}
-_debug("Debugging enabled.");
+debug('Debugging enabled.');
 
 function loadPomXml(project) {
     var deferred = q.defer();
@@ -129,9 +120,9 @@ function getHostApp(project) {
 
     try {
         var artifactId = project.pom.$('project > build > plugins > plugin:has(> groupId:contains("com.atlassian.maven.plugins")) > artifactId').text();
-        _debug('AMPS artifact Id: ' + artifactId);
+        debug('AMPS artifact Id: ' + artifactId);
         hostApp = artifactId.match(/^maven-(confluence|jira|stash)-plugin$/)[1];
-        _debug('hostApp: ' + hostApp);
+        debug('hostApp: ' + hostApp);
     } catch (e) {
         deferred.reject(e);
     }
@@ -185,7 +176,7 @@ function getLatestSparkVersion(project) {
             SPARK_VERSION = $('metadata versioning release').text();
             deferred.resolve(project);
         } else {
-            _debug('Could not load detect latest SPARK version. Using ' + SPARK_VERSION + '.');
+            debug('Could not load detect latest SPARK version. Using ' + SPARK_VERSION + '.');
             deferred.resolve(project);
         }
 
@@ -299,7 +290,7 @@ function setupSparkDir(project) {
 
     } catch (e) {
         if (e.code === 'EEXIST') {
-            _debug('\'' + project.sparkDir.path + '\' already exists.');
+            debug('\'' + project.sparkDir.path + '\' already exists.');
             deferred.resolve(project);
 
         } else {
@@ -314,7 +305,7 @@ function setupPackageJson(project) {
     var deferred = q.defer();
 
     if (fs.existsSync(project.packageJson.path)) {
-        _debug('\'' + project.packageJson.path + '\' already exists.');
+        debug('\'' + project.packageJson.path + '\' already exists.');
 
     } else {
         try {
@@ -530,7 +521,7 @@ function createTemplateApp(project) {
     var deferred = q.defer();
 
     if (!fs.existsSync(project.spa.path)) {
-        _debug(project.spa.path);
+        debug(project.spa.path);
         fs.mkdirSync(project.spa.path);
     }
 
