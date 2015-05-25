@@ -7,6 +7,7 @@
 
 var cheerio = require('cheerio'),
     extend = require('extend'),
+    debug = require('debug')('spark'),
     fs = require('fs'),
     glob = require('glob'),
     handlebars = require('handlebars'),
@@ -18,20 +19,14 @@ var cheerio = require('cheerio'),
     s = require('string');
 
 
-var DEBUG = false,
-    SPARK_VERSION = '0.9.2', // update this every once in a while (the value will be replaced with the latest version in init()).
+var SPARK_VERSION = '0.9.2', // update this every once in a while (the value will be replaced with the latest version in init()).
     SPARK_MAVEN_REPO = 'https://nexus.k15t.com/content/repositories/releases',
     FRONTEND_MAVEN_PLUGIN_VERSION = '0.0.23',
     NODE_VERSION = 'v0.10.33',
     NPM_VERSION = '1.4.28';
 
 
-var __dirname;
-
-
 function main(args) {
-
-    __dirname = path.dirname(process.mainModule.filename);
 
     var project = {
         cwd: process.cwd(),
@@ -86,23 +81,14 @@ function main(args) {
         .then(showSuccessInfo)
 
         .fail(function (err) {
-            DEBUG || console.log('...... ' + err.message);
-            DEBUG && console.log(err.stack);
+            debug.enabled || console.log('...... ' + err.message);
+            debug(err.stack);
         })
         .done();
 
 }
 
-function _debug(message) {
-    if (DEBUG) {
-        if (typeof message === "object" && !Array.isArray(message) && message !== null) {
-            console.log('[DEBUG]  ' + JSON.stringify(message, null, '  '));
-        } else {
-            console.log('[DEBUG]  ' + message);
-        }
-    }
-}
-_debug("Debugging enabled.");
+debug('Debugging enabled.');
 
 function loadPomXml(project) {
     var deferred = q.defer();
@@ -134,9 +120,9 @@ function getHostApp(project) {
 
     try {
         var artifactId = project.pom.$('project > build > plugins > plugin:has(> groupId:contains("com.atlassian.maven.plugins")) > artifactId').text();
-        _debug('AMPS artifact Id: ' + artifactId);
+        debug('AMPS artifact Id: ' + artifactId);
         hostApp = artifactId.match(/^maven-(confluence|jira|stash)-plugin$/)[1];
-        _debug('hostApp: ' + hostApp);
+        debug('hostApp: ' + hostApp);
     } catch (e) {
         deferred.reject(e);
     }
@@ -152,13 +138,10 @@ function getHostApp(project) {
 }
 
 function showWelcomeMessage(project) {
-    var deferred = q.defer();
-
     console.log('');
     console.log('SPARK // Create Single Page App');
 
-    deferred.resolve(project);
-    return deferred.promise;
+    return q.resolve(project);
 }
 
 function loadAtlassianPluginXml(project) {
@@ -190,7 +173,7 @@ function getLatestSparkVersion(project) {
             SPARK_VERSION = $('metadata versioning release').text();
             deferred.resolve(project);
         } else {
-            _debug('Could not load detect latest SPARK version. Using ' + SPARK_VERSION + '.');
+            debug('Could not load detect latest SPARK version. Using ' + SPARK_VERSION + '.');
             deferred.resolve(project);
         }
 
@@ -292,34 +275,28 @@ function readSpaParams(project) {
 }
 
 function setupSparkDir(project) {
-    var deferred = q.defer();
-
     if (fs.existsSync(project.spa.path)) {
-        deferred.reject(new Error("SPA key '" + project.spa.key + "' already exists."));
+        return q.reject(new Error("SPA key '" + project.spa.key + "' already exists."));
     }
 
     try {
         fs.mkdirSync(project.sparkDir.path);
-        deferred.resolve(project);
+        return q.resolve(project);
 
     } catch (e) {
         if (e.code === 'EEXIST') {
-            _debug('\'' + project.sparkDir.path + '\' already exists.');
-            deferred.resolve(project);
+            debug('\'' + project.sparkDir.path + '\' already exists.');
+            return q.resolve(project);
 
         } else {
-            deferred.reject(e);
+            return q.reject(e);
         }
     }
-
-    return deferred.promise;
 }
 
 function setupPackageJson(project) {
-    var deferred = q.defer();
-
     if (fs.existsSync(project.packageJson.path)) {
-        _debug('\'' + project.packageJson.path + '\' already exists.');
+        debug('\'' + project.packageJson.path + '\' already exists.');
 
     } else {
         try {
@@ -329,20 +306,18 @@ function setupPackageJson(project) {
                 'devDependencies': {}
             }, null, 2) + '\n');
         } catch (e) {
-            deferred.reject(e);
+            return q.reject(e);
         }
     }
 
     try {
         var packageJsonContent = fs.readFileSync(project.packageJson.path, 'utf8');
         project.packageJson.json = JSON.parse(packageJsonContent);
-        deferred.resolve(project);
+        return q.resolve(project);
 
     } catch (e) {
-        deferred.reject(e);
+        return q.reject(e);
     }
-
-    return deferred.promise;
 }
 
 function manipulatePomXml(project) {
@@ -518,8 +493,6 @@ function _registerHandlebarHelpers(project) {
 }
 
 function manipulateAtlassianPluginXml(project) {
-    var deferred = q.defer();
-
     var text = _renderFragment(project, path.join(project.spa.template.path, '_fragments', 'atlassian-plugin.handlebars'));
 
     var atlassianPluginXmlContent = fs.readFileSync(project.atlassianPlugin.path, 'utf8');
@@ -527,15 +500,14 @@ function manipulateAtlassianPluginXml(project) {
 
     fs.writeFileSync(project.atlassianPlugin.path, output, 'utf8');
 
-    deferred.resolve(project);
-    return deferred.promise;
+    return q.resolve(project);
 }
 
 function createTemplateApp(project) {
     var deferred = q.defer();
 
     if (!fs.existsSync(project.spa.path)) {
-        _debug(project.spa.path);
+        debug(project.spa.path);
         fs.mkdirSync(project.spa.path);
     }
 
@@ -572,8 +544,6 @@ function createTemplateApp(project) {
 }
 
 function generateSpaceAppAction(project) {
-    var deferred = q.defer();
-
     if (project.spa.type === 'space') {
         var templatePath = path.join(project.spa.template.path, '_fragments', 'GeneratedSpaceAppAction.java.handlebars');
         var templateString = fs.readFileSync(templatePath, 'utf8');
@@ -586,13 +556,10 @@ function generateSpaceAppAction(project) {
         fs.writeFileSync(path.join(packagePath, 'GeneratedSpaceAppAction.java'), spaceActionJava);
     }
 
-    deferred.resolve(project);
-    return deferred.promise;
+    return q.resolve(project);
 }
 
 function addDevDependencies(project) {
-    var deferred = q.defer();
-
     try {
         var packageJsonFragmentPath = path.join(project.spa.template.path, '_fragments', 'package.json');
         var packageJsonFragmentContent = fs.readFileSync(packageJsonFragmentPath, 'utf8');
@@ -601,25 +568,19 @@ function addDevDependencies(project) {
         project.packageJson.json = extend(true, project.packageJson.json, packageJsonFragment);
 
         fs.writeFileSync(project.packageJson.path, JSON.stringify(project.packageJson.json, null, 2) + '\n');
-        deferred.resolve(project);
+        return q.resolve(project);
 
     } catch (e) {
-        deferred.reject(e);
+        return q.reject(e);
     }
-
-    deferred.resolve(project);
-    return deferred.promise;
 }
 
 function showSuccessInfo(project) {
-    var deferred = q.defer();
-
     console.log('Set-up of SPA complete.');
     console.log('Run \'atlas-debug\' to run development system and look for navigation entry named ' + project.spa.name + '.');
     console.log('If the development system is already running, build and deploy with \'atlas-package && atlas-install-plugin\'.');
 
-    deferred.resolve(project);
-    return deferred.promise;
+    return q.resolve(project);
 }
 
 main();
