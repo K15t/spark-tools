@@ -214,15 +214,15 @@ function readSpaParams(project) {
             message: 'SPA Type:',
             choices: [
                 {
-                    name: 'Admin App',
+                    name: 'Admin App - Creates an application which will be part of the global admin console.',
                     value: 'admin'
                 },
                 {
-                    name: 'Dialog App',
+                    name: 'Dialog App - Creates an application which runs in a modal dialog and can be integrated for example in Confluence on every page.',
                     value: 'dialog'
                 },
                 {
-                    name: 'Space App (Confluence-only)',
+                    name: 'Space App (Confluence-only) - Creates an application which will be integrated as part of the Confluence Space Tools',
                     value: 'space'
                 }
             ]
@@ -236,10 +236,10 @@ function readSpaParams(project) {
                 {
                     name: 'AngularJS 1.x (Hello World)',
                     value: 'angular1x-helloworld'
-                    //},
-                    //{
-                    //    name: 'AngularJS 1.x (with Gulp)',
-                    //    value: 'angular1x-gulp'
+                },
+                {
+                    name: 'AngularJS 1.x (with Gulp and Bower support)',
+                    value: 'angular1x-gulp-bower'
                 }
             ],
             filter: function (value) {
@@ -248,6 +248,11 @@ function readSpaParams(project) {
                         name: 'angular1x-helloworld',
                         framework: 'angular1x',
                         path: path.join(__dirname, 'templates', project.hostApp, 'angular1x-helloworld')
+                    },
+                    'angular1x-gulp-bower': {
+                        name: 'angular1x-gulp-bower',
+                        framework: 'angular1x',
+                        path: path.join(__dirname, 'templates', project.hostApp, 'angular1x-gulp-bower')
                     }
                 })[value];
             }

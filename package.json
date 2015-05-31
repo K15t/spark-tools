@@ -18,9 +18,6 @@
     "request": "^2.55.0",
     "string": "^3.1.1"
   },
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
   "repository": {
     "type": "git",
     "url": "https://github.com/K15t/spark-tools.git"

@@ -1,0 +1,55 @@
+var sparkBuild = require('spark-build');
+
+sparkBuild({
+    moduleName: '{{spa.key}}',
+    resourcePath: 'com/k15t/scroll/platform/confluence/ui/{{spa.key}}/',
+    paths: {
+        'lib': {
+            //The CSS files of the libraries
+            'styles': {
+                'prod': [
+                    'bower_components/aui-adg-dist/aui/css/aui.css'
+                ],
+                'dev': [
+                    'bower_components/aui-adg-dist/aui/css/aui.min.css'
+                ]
+            },
+            'scripts': {
+                //The js files of the libraries that should be delivered with the app (not minified!)
+                'dev': [
+                    'bower_components/angular/angular.js',
+                    'bower_components/angular-route/angular-route.js'
+                ],
+                //The js files of the libraries that should be delivered with the app (minified!)
+                'prod': [
+                    'bower_components/angular/angular.js',
+                    'bower_components/angular-route/angular-route.js'
+                ],
+                //The js files of the libraries that must be provided to run tests
+                'test': [
+                    'bower_components/angular-mocks/angular-mocks.js'
+                ]
+            },
+            'assets': []
+        },
+        'app': {
+            'index': 'src/index.html',
+            'styles': [
+                'src/app/**/*.css',
+                'src/common/auing/select.css'
+            ],
+            'scripts': [
+                'src/app/**/*.js', '!src/app/**/*.spec.js'
+            ],
+            'partials': [
+                'src/app/**/*.html'
+            ],
+            'assets': [
+                'src/assets/**'
+            ],
+            'tests': [
+                'src/app/**/*.spec.js'
+            ]
+        }
+    }
+});
