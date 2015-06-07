@@ -1,8 +1,8 @@
-(function () {
+(function() {
 
-    angular.module("{{spa.key}}", [])
+    angular.module('{{spa.key}}', [])
 {{#isDialogApp}}
-        .run(function ($rootScope) {
+        .run(function($rootScope) {
             $rootScope.app = {
                 helpLink: 'http://example.com',
                 title: '{{spa.name}} SPARK App',
@@ -12,7 +12,7 @@
             };
         })
 {{/isDialogApp}}
-        .controller("HelloController", function ($scope) {
+        .controller('HelloController', function($scope) {
             $scope.user = {
                 'name': 'World'
             };
