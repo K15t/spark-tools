@@ -15,8 +15,10 @@
     <meta name="spark.app-base-url" content="plugins/servlet/{{spa.key}}/">
 {{/isSpaceApp}}
 
-    <script src="libs/angularjs/1.4.0-rc.0/angular.min.js"></script>
-    <script type="text/javascript" src="js/app.js"></script>
+    <!-- lib:css -->
+    <!-- endinject -->
+    <!-- inject:css -->
+    <!-- endinject -->
 
     <title>{{spa.name}}</title>
 </head>
@@ -50,6 +52,15 @@
     angular.bootstrap(angular.element('#{{spa.key}}'), ['{{spa.key}}']);
 </script>
 {{/isAdminOrSpaceApp}}
+
+<!-- lib:js -->
+<!-- endinject -->
+
+<!-- inject:js -->
+<!-- endinject -->
+
+<!-- partials:js -->
+<!-- endinject -->
 
 </body>
 </html>
