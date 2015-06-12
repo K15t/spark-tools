@@ -47,12 +47,6 @@
 
 </div>
 
-{{#isAdminOrSpaceApp}}
-<script>
-    angular.bootstrap(angular.element('#{{spa.key}}'), ['{{spa.key}}']);
-</script>
-{{/isAdminOrSpaceApp}}
-
 <!-- lib:js -->
 <!-- endinject -->
 
@@ -61,6 +55,12 @@
 
 <!-- partials:js -->
 <!-- endinject -->
+
+{{#isAdminOrSpaceApp}}
+    <script>
+        angular.bootstrap(angular.element('#{{spa.key}}'), ['{{spa.key}}']);
+    </script>
+{{/isAdminOrSpaceApp}}
 
 </body>
 </html>
