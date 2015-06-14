@@ -1,6 +1,6 @@
 {
   "name": "spark-tools",
-  "version": "0.0.3",
+  "version": "0.0.5",
   "description": "Developer tools for the SPARK framework (more info: http://www.k15t.com/display/SPARK).",
   "preferGlobal": true,
   "bin": {

@@ -19,11 +19,11 @@ var cheerio = require('cheerio'),
     s = require('string');
 
 
-var SPARK_VERSION = '0.9.2', // update this every once in a while (the value will be replaced with the latest version in init()).
+var SPARK_VERSION = '0.9.3', // update this every once in a while (the value will be replaced with the latest version in init()).
     SPARK_MAVEN_REPO = 'https://nexus.k15t.com/content/repositories/releases',
     FRONTEND_MAVEN_PLUGIN_VERSION = '0.0.23',
-    NODE_VERSION = 'v0.10.33',
-    NPM_VERSION = '1.4.28';
+    NODE_VERSION = 'v0.12.4',
+    NPM_VERSION = '2.11.2';
 
 
 function main(args) {
