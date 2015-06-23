@@ -1,0 +1,18 @@
+<execution>
+    <id>bower-{{spa.key}}</id>
+    <goals>
+        <goal>bower</goal>
+    </goals>
+    <configuration>
+        <arguments>--config.cwd={{spa.key}} install</arguments>
+    </configuration>
+</execution>
+<execution>
+    <id>gulp-{{spa.key}}</id>
+    <goals>
+        <goal>gulp</goal>
+    </goals>
+    <configuration>
+        <arguments>--gulpfile {{spa.key}}/gulpfile.js</arguments>
+    </configuration>
+</execution>

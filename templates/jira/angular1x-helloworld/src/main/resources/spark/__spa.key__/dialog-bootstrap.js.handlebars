@@ -1,0 +1,17 @@
+AJS.toInit(function () {
+
+    'use strict';
+
+    var spark = SPARK.noConflict();
+
+    var dialog1;
+
+    AJS.$('#spark-{{spa.key}}-webitem').on('click', function () {
+        if (!dialog1) {
+            dialog1 = spark.createDialogApp('{{spa.key}}', '/plugins/servlet/{{spa.key}}/');
+        } else {
+            dialog1.show();
+        }
+    });
+
+});

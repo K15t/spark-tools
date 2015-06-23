@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+{{#isAdminApp}}
+    <meta name="decorator" content="atl.admin"/>
+    <meta name="admin.active.section" content="system.admin/configuration"/>
+    <meta name="admin.active.tab" content="spark-{{spa.key}}-webitem"/>
+{{/isAdminApp}}
+{{#isDialogApp}}
+    <meta name="decorator" content="spark.dialog-app"/>
+{{/isDialogApp}}
+{{#isSpaceApp}}
+    <!-- the spark.app-base-url is used to define the prefix for JS, CSS, etc. resources -->
+    <meta name="spark.app-base-url" content="plugins/servlet/{{spa.key}}/">
+{{/isSpaceApp}}
+
+    <!-- lib:css -->
+    <!-- endinject -->
+    <!-- inject:css -->
+    <!-- endinject -->
+
+    <title>{{spa.name}}</title>
+</head>
+<body>
+{{#isAdminApp}}
+<content tag="selectedWebItem">spark-{{spa.key}}-webitem</content>
+{{/isAdminApp}}
+
+<div id="{{spa.key}}" ng-controller="HelloController">
+
+    <h3>Hello, \{{user.name}}!</h3>
+
+    <form class="aui">
+        <fieldset>
+            <div class="field-group">
+                <label for="d-fname">What's your Name?<span class="aui-icon icon-required"> required</span></label>
+                <input ng-model="user.name" class="text" type="text" id="d-fname" name="d-fname" title="first name"/>
+
+                <div class="description">Insert name for greeting</div>
+            </div>
+        </fieldset>
+    </form>
+{{#isAdminOrSpaceApp}}
+    <p>Powered by <a href="https://github.com/K15t/spark">SPARK</a> and Angular \{{angularVersion}}.</p>
+{{/isAdminOrSpaceApp}}
+
+</div>
+
+<!-- lib:js -->
+<!-- endinject -->
+
+<!-- inject:js -->
+<!-- endinject -->
+
+<!-- partials:js -->
+<!-- endinject -->
+
+{{#isAdminOrSpaceApp}}
+    <script>
+        angular.bootstrap(angular.element('#{{spa.key}}'), ['{{spa.key}}']);
+    </script>
+{{/isAdminOrSpaceApp}}
+
+</body>
+</html>
