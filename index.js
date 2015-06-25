@@ -74,7 +74,7 @@ function main(args) {
 
         .then(manipulateAtlassianPluginXml)
         .then(createTemplateApp)
-        .then(generateSpaceAppAction)
+        .then(generateAppAction)
 
         .then(addDevDependencies)
 
@@ -127,8 +127,8 @@ function getHostApp(project) {
         deferred.reject(e);
     }
 
-    if (['confluence'].indexOf(hostApp) === -1) { // TODO change when we support JIRA or Stash
-        deferred.reject(new Error('Unsupported host app: \'' + hostApp + '\'. We only support Confluence currently.'));
+    if (['confluence'].indexOf(hostApp) === -1 && ['jira'].indexOf(hostApp) === -1) { // TODO change when we support JIRA or Stash
+        deferred.reject(new Error('Unsupported host app: \'' + hostApp + '\'. We only support Confluence and Jira currently.'));
     }
 
     project.hostApp = hostApp;
@@ -185,7 +185,32 @@ function getLatestSparkVersion(project) {
 function readSpaParams(project) {
     var deferred = q.defer();
 
-    inquirer.prompt([
+    inquirer.prompt(getPromptMessages(project), function (answers) {
+        project.spa = answers;
+
+        if (!answers.everythingOk) {
+            deferred.reject(new Error('Aborted.'));
+        } else {
+            project.spa.path = path.join(project.sparkDir.path, project.spa.key);
+            project.spa.keyForJavaPackage = project.spa.key.replace(/-/g, '_');
+            delete project.spa.everythingOk;
+            deferred.resolve(project);
+        }
+    });
+
+    return deferred.promise;
+}
+
+function getPromptMessages(project) {
+    if (['confluence'].indexOf(project.hostApp) > -1) {
+        return getConfluencePromptMessages(project);
+    } else if (['jira'].indexOf(project.hostApp) > -1) {
+        return getJiraPromptMessages(project);
+    }
+}
+
+function getConfluencePromptMessages(project) {
+    var promptMessage = [
         {
             type: 'input',
             name: 'key',
@@ -263,20 +288,93 @@ function readSpaParams(project) {
             message: 'About to create SPA. Everything ok?',
             'default': true
         }
-    ], function (answers) {
-        project.spa = answers;
+    ];
 
-        if (!answers.everythingOk) {
-            deferred.reject(new Error('Aborted.'));
-        } else {
-            project.spa.path = path.join(project.sparkDir.path, project.spa.key);
-            project.spa.keyForJavaPackage = project.spa.key.replace(/-/g, '_');
-            delete project.spa.everythingOk;
-            deferred.resolve(project);
+    return promptMessage;
+}
+
+function getJiraPromptMessages(project) {
+    var promptMessage = [
+        {
+            type: 'input',
+            name: 'key',
+            message: 'Key (e.g. \'scroll-config\')',
+            validate: function (value) {
+                var pass = value.match(/^[a-z][a-z0-9_-]+$/i);
+                if (pass) {
+                    if (fs.existsSync(path.join(project.sparkDir.path, value))) {
+                        return "SPA key '" + value + "' already exists.";
+                    } else {
+                        return true;
+                    }
+                } else {
+                    return "Please enter a valid SPA key (starts with a letter & contains only alpha-numeric characters, '-', and '_'.";
+                }
+            }
+        },
+        {
+            type: 'input',
+            name: 'name',
+            message: 'Name'
+        },
+        {
+            type: 'list',
+            name: 'type',
+            message: 'SPA Type:',
+            choices: [
+                {
+                    name: 'Admin App - Creates an application which will be part of the global admin console.',
+                    value: 'admin'
+                },
+                {
+                    name: 'Dialog App - Creates an application which runs in a modal dialog and can be integrated for example in Confluence on every page.',
+                    value: 'dialog'
+                },
+                {
+                    name: 'Project App (JIRA-only) - Creates an application which ... TODO',
+                    value: 'project'
+                }
+            ]
+        },
+        {
+            type: 'list',
+            name: 'template',
+            message: 'SPA Template:',
+            'default': 'angular1x-helloworld',
+            choices: [
+                {
+                    name: 'AngularJS 1.x (Hello World)',
+                    value: 'angular1x-helloworld'
+                },
+                {
+                    name: 'AngularJS 1.x (with Gulp and Bower support)',
+                    value: 'angular1x-gulp-bower'
+                }
+            ],
+            filter: function (value) {
+                return ({
+                    'angular1x-helloworld': {
+                        name: 'angular1x-helloworld',
+                        framework: 'angular1x',
+                        path: path.join(__dirname, 'templates', project.hostApp, 'angular1x-helloworld')
+                    },
+                    'angular1x-gulp-bower': {
+                        name: 'angular1x-gulp-bower',
+                        framework: 'angular1x',
+                        path: path.join(__dirname, 'templates', project.hostApp, 'angular1x-gulp-bower')
+                    }
+                })[value];
+            }
+        },
+        {
+            type: 'confirm',
+            name: 'everythingOk',
+            message: 'About to create SPA. Everything ok?',
+            'default': true
         }
-    });
+    ];
 
-    return deferred.promise;
+    return promptMessage;
 }
 
 function setupSparkDir(project) {
@@ -482,7 +580,7 @@ function _registerHandlebarHelpers(project) {
             return (project.spa.type === 'admin') ? options.fn(this) : options.inverse(this);
         },
         'isSpaceApp': function (options) {
-            return (project.spa.type === 'space') ? options.fn(this) : options.inverse(this);
+            return (project.spa.type === 'space' || project.spa.type === 'project') ? options.fn(this) : options.inverse(this);
         },
         'isDialogApp': function (options) {
             return (project.spa.type === 'dialog') ? options.fn(this) : options.inverse(this);
@@ -548,6 +646,15 @@ function createTemplateApp(project) {
     return deferred.promise;
 }
 
+
+function generateAppAction(project) {
+    if (['confluence'].indexOf(project.hostApp) > -1) {
+        return generateSpaceAppAction(project);
+    } else if (['jira'].indexOf(project.hostApp) > -1) {
+        return generateProjectAppAction(project);
+    }
+}
+
 function generateSpaceAppAction(project) {
     if (project.spa.type === 'space') {
         var templatePath = path.join(project.spa.template.path, '_fragments', 'GeneratedSpaceAppAction.java.handlebars');
@@ -559,6 +666,26 @@ function generateSpaceAppAction(project) {
         var packagePath = path.join(process.cwd(), 'src', 'main', 'java', 'spark', 'GENERATED', project.spa.keyForJavaPackage);
         mkdirp.sync(packagePath, '0755' );
         fs.writeFileSync(path.join(packagePath, 'GeneratedSpaceAppAction.java'), spaceActionJava);
+    }
+
+    return q.resolve(project);
+}
+
+function generateProjectAppAction(project) {
+    if (project.spa.type === 'project') {
+        var templatePath = path.join(project.spa.template.path, '_fragments', 'GeneratedJiraAppAction.java.handlebars');
+        var templateString = fs.readFileSync(templatePath, 'utf8');
+        var spaceActionJava = handlebars.compile(templateString, {
+            strict: true
+        })(project);
+
+        var packagePath = path.join(process.cwd(), 'src', 'main', 'java', 'spark', 'GENERATED', project.spa.keyForJavaPackage);
+
+        console.log('packagePath: ' + packagePath);
+
+        mkdirp.sync(packagePath, '0755' );
+        // TODO single template name but switch here based on class from template?
+        fs.writeFileSync(path.join(packagePath, 'GeneratedJiraAppAction.java'), spaceActionJava);
     }
 
     return q.resolve(project);

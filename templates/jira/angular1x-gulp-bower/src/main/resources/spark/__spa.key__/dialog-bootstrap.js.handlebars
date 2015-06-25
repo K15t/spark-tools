@@ -1,0 +1,29 @@
+AJS.toInit(function () {
+
+    'use strict';
+
+    var spark = SPARK.noConflict();
+
+    var dialog1;
+
+    AJS.$('#spark-{{spa.key}}-webitem').on('click', function () {
+        if (!dialog1) {
+            dialog1 = spark.createDialogApp('{{spa.key}}', '/plugins/servlet/{{spa.key}}/');
+
+            AJS.$(dialog1)[0].$appEl.find('.button-panel-cancel-link').on('click', function() {
+                dialog1.hide();
+                dialog1.remove();
+                dialog1 = null;
+            });
+
+            AJS.$(dialog1)[0].$appEl.find('.button-panel-save-button').on('click', function() {
+                dialog1.hide();
+                dialog1.remove();
+                dialog1 = null;
+            });
+        } else {
+            dialog1.show();
+        }
+    });
+
+});
